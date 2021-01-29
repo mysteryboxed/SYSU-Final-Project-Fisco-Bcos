@@ -19,6 +19,47 @@ from client.common.compiler import Compiler
 from client.bcoserror import BcosException, BcosError
 from client_config import client_config
     
+if __name__ == "__main__":
+    # 实例化client
+    client = BcosClient()
+
+    # 加载abi定义
+    if os.path.isfile(client_config.solc_path) or os.path.isfile(client_config.solcjs_path):
+        Compiler.compile_file("MySol.sol")
+    abi_file = "MySol.abi"
+    data_parser = DatatypeParser()
+    data_parser.load_abi_file(abi_file)
+    contract_abi = data_parser.contract_abi
+
+    # 部署合约
+    print("\n>>Deploy:---------------------------------------------------------------------")
+    with open("MySol.bin", 'r') as load_f:
+        contract_bin = load_f.read()
+        load_f.close()
+    result = client.deploy(contract_bin)
+    print("deploy",result)
+    print("new address : ",result["contractAddress"])
+    contract_name =  os.path.splitext(os.path.basename(abi_file))[0]
+    memo = "tx:"+result["transactionHash"]
+    
+    #将合约地址填入
+    abi_file = "MySol.abi"
+    data_parser = DatatypeParser()
+    data_parser.load_abi_file(abi_file)
+    contract_abi = data_parser.contract_abi
+    client = BcosClient()
+    to_address = result["contractAddress"]
+
+    #链接前端
+    app = QtWidgets.QApplication(sys.argv)
+    login_window = Login()
+    signup_window = Signup()
+    company_window = Companies()
+    login_window.show()
+    #signup_window.show()
+    app.exec_()
+    client.finish()
+
 #公司功能窗口
 class Companies(QMainWindow, Ui_Companies):
     def __init__(self, parent=None):
@@ -372,45 +413,3 @@ class Login(QMainWindow, Ui_Login):
 
     def on_press_signup(self):
         signup_window.show()
-
-
-if __name__ == "__main__":
-    # 实例化client
-    client = BcosClient()
-
-    # 加载abi定义
-    if os.path.isfile(client_config.solc_path) or os.path.isfile(client_config.solcjs_path):
-        Compiler.compile_file("MySol.sol")
-    abi_file = "MySol.abi"
-    data_parser = DatatypeParser()
-    data_parser.load_abi_file(abi_file)
-    contract_abi = data_parser.contract_abi
-
-    # 部署合约
-    print("\n>>Deploy:---------------------------------------------------------------------")
-    with open("MySol.bin", 'r') as load_f:
-        contract_bin = load_f.read()
-        load_f.close()
-    result = client.deploy(contract_bin)
-    print("deploy",result)
-    print("new address : ",result["contractAddress"])
-    contract_name =  os.path.splitext(os.path.basename(abi_file))[0]
-    memo = "tx:"+result["transactionHash"]
-    
-    #将合约地址填入
-    abi_file = "MySol.abi"
-    data_parser = DatatypeParser()
-    data_parser.load_abi_file(abi_file)
-    contract_abi = data_parser.contract_abi
-    client = BcosClient()
-    to_address = result["contractAddress"]
-
-    #链接前端
-    app = QtWidgets.QApplication(sys.argv)
-    login_window = Login()
-    signup_window = Signup()
-    company_window = Companies()
-    login_window.show()
-    #signup_window.show()
-    app.exec_()
-    client.finish()
